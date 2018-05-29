@@ -1,0 +1,46 @@
+// myClinet.cpp : 定义控制台应用程序的入口点。
+//
+
+#include "stdafx.h"
+#include <stdio.h>
+#include <winsock2.h>
+#include <stdlib.h>
+#pragma comment(lib,"ws2_32.lib")
+#pragma warning(disable:4996)
+#define MAXLINE 4096
+#define SERVER_PORT 13
+int main(int argc, char *argv[])
+{
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+	SOCKET ConnectSocket = INVALID_SOCKET;
+	ConnectSocket = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in serverAddr;
+	memset(&serverAddr, 0, sizeof(serverAddr));
+	serverAddr.sin_addr.s_addr = inet_addr(argv[1]);
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(SERVER_PORT);
+	connect(ConnectSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+	char sendLine[MAXLINE + 1], recvLine[MAXLINE + 1];
+	printf("输入数据:\n");
+	memset(sendLine, 0, sizeof(sendLine));
+	gets(sendLine);
+	int iResult;
+	while (sendLine[0] != 'Q') {
+		send(ConnectSocket, sendLine, strlen(sendLine), 0);
+		memset(recvLine, 0, sizeof(recvLine));
+		iResult = recv(ConnectSocket, recvLine, sizeof(recvLine), 0);
+		//printf("%d\n",iResult);
+		if (iResult >= 0)
+			printf("%s\n", recvLine);
+		printf("输入数据:\n");
+		memset(sendLine, 0, sizeof(sendLine));
+		gets(sendLine);
+
+	}
+	closesocket(ConnectSocket);
+
+	WSACleanup();
+	return 0;
+}
+

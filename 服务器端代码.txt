@@ -1,0 +1,59 @@
+// myServer.cpp : 定义控制台应用程序的入口点。
+//
+
+#include "stdafx.h"
+#include <stdio.h>
+#include <winsock2.h>
+#pragma comment(lib,"ws2_32.lib")
+#pragma warning(disable:c1083)
+#define MAXLINE 4096
+#define LISTENQ 1024
+#define SERVER_PORT 13
+
+int main()
+{
+	WSADATA wsaData;
+	int iResult;
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		printf("start fail,error:%d\n", WSAGetLastError());
+		return -1;
+	}
+	SOCKET ListenSocket = INVALID_SOCKET, ClientSocket = INVALID_SOCKET;
+	ListenSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (ListenSocket == INVALID_SOCKET) {
+		return -1;
+	}
+	struct sockaddr_in serverAddr;
+	memset(&serverAddr, 0, sizeof(serverAddr));
+	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(SERVER_PORT);
+	bind(ListenSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+	listen(ListenSocket, LISTENQ);
+	char buff[MAXLINE];
+	while (true) {
+		ClientSocket = accept(ListenSocket, NULL, NULL);
+		memset(buff, 0, sizeof(buff));
+		iResult = recv(ClientSocket, buff, sizeof(buff), 0);
+		while (iResult > 0) {
+			for (int t = 0; buff[t] != '\0'; t++) {
+				if (buff[t] >= 'a' && buff[t] <= 'z')
+					buff[t] -= 32;
+			}
+			printf("%s\n",buff);
+			//puts(buff);
+			//fflush(stdin);
+			send(ClientSocket, buff, strlen(buff), 0);
+			memset(buff, 0, sizeof(buff));
+			iResult = recv(ClientSocket, buff, sizeof(buff), 0);
+		}
+		closesocket(ClientSocket);
+
+	}
+	closesocket(ListenSocket);
+
+	WSACleanup();
+	return 0;
+}
+
